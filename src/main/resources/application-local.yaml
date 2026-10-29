@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: doctor-appointment-system
+     
+  datasource:
+    url: jdbc:postgresql://localhost:5432/database_db
+    username: Username
+    password: Password
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        
+server:
+  port: Poart_Number
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
