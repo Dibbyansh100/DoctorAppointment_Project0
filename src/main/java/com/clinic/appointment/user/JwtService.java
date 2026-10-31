@@ -12,23 +12,26 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 
-import lombok.AllArgsConstructor;
-
 
 @Service
-@AllArgsConstructor
 public class JwtService {
 	private final JwtEncoder jwtEncoder;
-	private final long expairationMinutes;
-	@Value("${Spring.security.jwt.expairation-minutes}")
+	private final long expirationMinutes;
+	public JwtService(JwtEncoder jwtEncoder,
+            @Value("${spring.security.jwt.expiration-minutes}") long expirationMinutes) {
+             this.jwtEncoder = jwtEncoder;
+             this.expirationMinutes = expirationMinutes;
+}
+	
 	public String generateToken(User user) {
 		Instant now = Instant.now();
-		JwtClaimsSet claims = JwtClaimsSet.builder()
+		JwtClaimsSet claims = JwtClaimsSet
+				.builder()
 				.issuer("doctor-appointment-api")
 				.issuedAt(now)
-				.expiresAt(now.plus(expairationMinutes,  ChronoUnit.MINUTES))
+				.expiresAt(now.plus(expirationMinutes,  ChronoUnit.MINUTES))
 				.subject(user.getEmail())
-				.claim("role", List.of(user.getRole().name()))
+				.claim("roles", List.of(user.getRole().name()))
 				.build();
 		JwsHeader header = JwsHeader
 				.with(MacAlgorithm.HS256)
