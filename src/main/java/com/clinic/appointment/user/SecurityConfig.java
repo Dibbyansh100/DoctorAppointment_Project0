@@ -34,12 +34,12 @@ import com.nimbusds.jose.jwk.source.ImmutableSecret;
 
 @Configuration(proxyBeanMethods = false)
 public class SecurityConfig {
-	@Value("${spring.scurity.jwt.secret}")
+	@Value("${spring.security.jwt.secret}")
 	String secret;
 	@Bean
 	public SecretKey jwtSecretKey() {
 		byte[] keyBites = secret.getBytes(StandardCharsets.UTF_8);
-		return new SecretKeySpec(keyBites, "hmacSHA256");
+		return new SecretKeySpec(keyBites, "HmacSHA256");
 		
 	}
 	@Bean
@@ -89,15 +89,20 @@ public class SecurityConfig {
 				return authenticationConverter;
 	}
 	@Bean
-	public SecurityFilterChain chain(HttpSecurity http,AuthenticationProvider authenticationProvider,JwtAuthenticationConverter jwtAuthenticationConverter) {
-		http
-		    .csrf(csrf -> csrf.disable()
-		    .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-		    .authenticationProvider(authenticationProvider)
-		    .authorizeHttpRequests(authorize -> authorize.requestMatchers("").permitAll()
-		    		.requestMatchers("").hasRole("")
-		    		.requestMatchers("")
-		    		).oauth2AuthorizationServer(oauth2 -> oaut2).jwt(jwt ->jwt.)
+	public SecurityFilterChain chain(HttpSecurity http,
+	        AuthenticationProvider authenticationProvider,
+	        JwtAuthenticationConverter jwtAuthenticationConverter) throws Exception {
+	    http
+	        .csrf(csrf -> csrf.disable())
+	        .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+	        .authenticationProvider(authenticationProvider)
+	        .authorizeHttpRequests(auth -> auth
+	            .requestMatchers("/api/auth/**").permitAll()
+	            .requestMatchers("/api/admin/**").hasRole("ADMIN")
+	            .anyRequest().authenticated())
+	        .oauth2ResourceServer(oauth2 -> oauth2
+	            .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)));
+	    return http.build();
 	}
 
 }
