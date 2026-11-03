@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -91,15 +92,23 @@ public class SecurityConfig {
 	@Bean
 	public SecurityFilterChain chain(HttpSecurity http,
 	        AuthenticationProvider authenticationProvider,
-	        JwtAuthenticationConverter jwtAuthenticationConverter) throws Exception {
+	        JwtAuthenticationConverter jwtAuthenticationConverter)  {
 	    http
 	        .csrf(csrf -> csrf.disable())
 	        .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 	        .authenticationProvider(authenticationProvider)
 	        .authorizeHttpRequests(auth -> auth
-	            .requestMatchers("/api/auth/**").permitAll()
-	            .requestMatchers("/api/admin/**").hasRole("ADMIN")
-	            .anyRequest().authenticated())
+	            .requestMatchers("/api/v1/auth/**").permitAll()
+	            .requestMatchers(HttpMethod.GET,"/api/v1/doctors/**").permitAll()
+	            .requestMatchers("/api/v1/doctors/**").hasRole("ADMIN")
+	            .requestMatchers("/api/v1/patients/**").hasRole("ADMIN")
+	            .requestMatchers(HttpMethod.POST,"/api/v1/appointments").hasAnyRole("PATIENT","ADMIN")
+	            .requestMatchers(HttpMethod.PATCH, "/api/v1/appointments/*/complete").hasAnyRole("Doctor", "ADMIN")
+	            .requestMatchers(HttpMethod.PATCH,"/api/v1/appointments/*/cancel").hasAnyRole("ADMIN","DOCTOR")
+	            .requestMatchers("/api/v1/appointments/**").hasAnyRole("ADMIN","PATIENT","DOCTOR")
+	            .requestMatchers("/swagger-ui/**","/swagger-ui.html","/v3/api-docs/**").permitAll()
+	            .anyRequest()
+	            .authenticated())
 	        .oauth2ResourceServer(oauth2 -> oauth2
 	            .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)));
 	    return http.build();
