@@ -1,0 +1,37 @@
+spring:
+  security:
+    jwt:
+      secret: "${JWT_SECRET:TuncIRVFPUqC4x+enb6rWxWVy+abix4rS9kjhbFG+tI=}"
+      expiration-seconds: ${JWT_EXPIRATION_SECONDS:900}
+  application:
+    name: doctor-appointment-system
+     
+  datasource:
+    url: "${SPRING_DATASOURCE_URL:${DATABASE_URL:jdbc:postgresql://localhost:5432/doctor_db}}"
+    username: "${SPRING_DATASOURCE_USERNAME:postgres}"
+    password: "${SPRING_DATASOURCE_PASSWORD:Pandey01@}"
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    generate-ddl: true
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    show-sql: true
+    properties:
+      hibernate:
+        default_schema: public
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        
+server:
+  port: ${PORT:8079}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+      
