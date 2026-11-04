@@ -89,11 +89,25 @@ public class SecurityConfig {
 				authenticationConverter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
 				return authenticationConverter;
 	}
+
+	@Bean
+	public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
+		org.springframework.web.cors.CorsConfiguration configuration = new org.springframework.web.cors.CorsConfiguration();
+		configuration.setAllowedOriginPatterns(java.util.List.of("*"));
+		configuration.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+		configuration.setAllowedHeaders(java.util.List.of("*"));
+		configuration.setAllowCredentials(true);
+		org.springframework.web.cors.UrlBasedCorsConfigurationSource source = new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
+		source.registerCorsConfiguration("/**", configuration);
+		return source;
+	}
+
 	@Bean
 	public SecurityFilterChain chain(HttpSecurity http,
 	        AuthenticationProvider authenticationProvider,
-	        JwtAuthenticationConverter jwtAuthenticationConverter)  {
+	        JwtAuthenticationConverter jwtAuthenticationConverter) {
 	    http
+	        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 	        .csrf(csrf -> csrf.disable())
 	        .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 	        .authenticationProvider(authenticationProvider)
@@ -103,10 +117,11 @@ public class SecurityConfig {
 	            .requestMatchers("/api/v1/doctors/**").hasRole("ADMIN")
 	            .requestMatchers("/api/v1/patients/**").hasRole("ADMIN")
 	            .requestMatchers(HttpMethod.POST,"/api/v1/appointments").hasAnyRole("PATIENT","ADMIN")
-	            .requestMatchers(HttpMethod.PATCH, "/api/v1/appointments/*/complete").hasAnyRole("Doctor", "ADMIN")
-	            .requestMatchers(HttpMethod.PATCH,"/api/v1/appointments/*/cancel").hasAnyRole("ADMIN","DOCTOR")
+	            .requestMatchers(HttpMethod.PATCH, "/api/v1/appointments/*/complete").hasAnyRole("DOCTOR", "ADMIN")
+	            .requestMatchers(HttpMethod.PATCH,"/api/v1/appointments/*/cancel").hasAnyRole("ADMIN", "PATIENT")
 	            .requestMatchers("/api/v1/appointments/**").hasAnyRole("ADMIN","PATIENT","DOCTOR")
 	            .requestMatchers("/swagger-ui/**","/swagger-ui.html","/v3/api-docs/**").permitAll()
+	            .requestMatchers("/actuator/**").permitAll()
 	            .anyRequest()
 	            .authenticated())
 	        .oauth2ResourceServer(oauth2 -> oauth2

@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.server.ResponseStatusException;
+
 import java.net.URI;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -109,6 +112,30 @@ public class GlobalExceptionHandler {
                 "Database integrity constraint violation occurred."
         );
         problemDetail.setTitle("Database Conflict");
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+        problemDetail.setProperty("timestamp", Instant.now());
+        return problemDetail;
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ProblemDetail handleResponseStatusException(ResponseStatusException ex, HttpServletRequest request) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                ex.getStatusCode(),
+                ex.getReason() != null ? ex.getReason() : ex.getMessage()
+        );
+        problemDetail.setTitle("Authentication Error");
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+        problemDetail.setProperty("timestamp", Instant.now());
+        return problemDetail;
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ProblemDetail handleAuthenticationException(AuthenticationException ex, HttpServletRequest request) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNAUTHORIZED,
+                "Invalid credentials. Please verify your email and password."
+        );
+        problemDetail.setTitle("Unauthorized");
         problemDetail.setInstance(URI.create(request.getRequestURI()));
         problemDetail.setProperty("timestamp", Instant.now());
         return problemDetail;

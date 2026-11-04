@@ -5,6 +5,10 @@ import com.clinic.appointment.doctor.dto.DoctorResponse;
 import com.clinic.appointment.exception.BusinessRuleViolationException;
 import com.clinic.appointment.exception.DuplicateResourceException;
 import com.clinic.appointment.exception.ResourceNotFoundException;
+import com.clinic.appointment.user.User;
+import com.clinic.appointment.user.UserRepository;
+import com.clinic.appointment.user.UserRole;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,9 +21,15 @@ import java.util.UUID;
 public class DoctorService {
 
     private final DoctorRepository doctorRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public DoctorService(DoctorRepository doctorRepository) {
+    public DoctorService(DoctorRepository doctorRepository,
+                         UserRepository userRepository,
+                         PasswordEncoder passwordEncoder) {
         this.doctorRepository = doctorRepository;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Transactional
@@ -42,6 +52,24 @@ public class DoctorService {
         doctor.setActive(true);
 
         Doctor saved = doctorRepository.save(doctor);
+
+        // Auto-create or promote User account so Doctor can log in immediately
+        userRepository.findByEmailIgnoreCase(normalizedEmail).ifPresentOrElse(
+                existingUser -> {
+                    existingUser.setRole(UserRole.DOCTOR);
+                    existingUser.setActive(true);
+                    userRepository.save(existingUser);
+                },
+                () -> {
+                    User doctorUser = new User();
+                    doctorUser.setEmail(normalizedEmail);
+                    doctorUser.setPasswordHash(passwordEncoder.encode("Doctor@123"));
+                    doctorUser.setRole(UserRole.DOCTOR);
+                    doctorUser.setActive(true);
+                    userRepository.save(doctorUser);
+                }
+        );
+
         return mapToResponse(saved);
     }
 
@@ -90,6 +118,10 @@ public class DoctorService {
     public DoctorResponse deactivateDoctor(UUID id) {
         Doctor doctor = getDoctorEntityById(id);
         doctor.setActive(false);
+        userRepository.findByEmailIgnoreCase(doctor.getEmail()).ifPresent(u -> {
+            u.setActive(false);
+            userRepository.save(u);
+        });
         Doctor updated = doctorRepository.save(doctor);
         return mapToResponse(updated);
     }
@@ -98,6 +130,10 @@ public class DoctorService {
     public DoctorResponse activateDoctor(UUID id) {
         Doctor doctor = getDoctorEntityById(id);
         doctor.setActive(true);
+        userRepository.findByEmailIgnoreCase(doctor.getEmail()).ifPresent(u -> {
+            u.setActive(true);
+            userRepository.save(u);
+        });
         Doctor updated = doctorRepository.save(doctor);
         return mapToResponse(updated);
     }
