@@ -33,28 +33,34 @@ import org.springframework.security.web.SecurityFilterChain;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 
 
-@Configuration(proxyBeanMethods = false)
+@Configuration
 public class SecurityConfig {
-	@Value("${spring.security.jwt.secret}")
-	String secret;
+	@Value("${spring.security.jwt.secret:TuncIRVFPUqC4x+enb6rWxWVy+abix4rS9kjhbFG+tI=}")
+	private String secret;
+
 	@Bean
 	public SecretKey jwtSecretKey() {
-		byte[] keyBites = secret.getBytes(StandardCharsets.UTF_8);
+		String effectiveSecret = (secret != null && !secret.isBlank())
+				? secret
+				: "TuncIRVFPUqC4x+enb6rWxWVy+abix4rS9kjhbFG+tI=";
+		byte[] keyBites = effectiveSecret.getBytes(StandardCharsets.UTF_8);
 		return new SecretKeySpec(keyBites, "HmacSHA256");
-		
 	}
+
 	@Bean
-	public JwtEncoder jwtEncoder() {
+	public JwtEncoder jwtEncoder(SecretKey jwtSecretKey) {
 		return new NimbusJwtEncoder(
-				new ImmutableSecret<>(jwtSecretKey()));
+				new ImmutableSecret<>(jwtSecretKey));
 	}
+
 	@Bean
-	public JwtDecoder jwtDecoder() {
-		return  NimbusJwtDecoder.withSecretKey(jwtSecretKey()).macAlgorithm(MacAlgorithm.HS256)
+	public JwtDecoder jwtDecoder(SecretKey jwtSecretKey) {
+		return NimbusJwtDecoder.withSecretKey(jwtSecretKey).macAlgorithm(MacAlgorithm.HS256)
 				.build();
 	}
+
 	@Bean
-	public PasswordEncoder passwordencoder() {
+	public PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
 	}
 	@Bean

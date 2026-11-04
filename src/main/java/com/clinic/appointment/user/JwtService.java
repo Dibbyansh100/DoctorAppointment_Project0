@@ -23,7 +23,7 @@ public class JwtService {
     private final long expirationSeconds;
 
     public JwtService(JwtEncoder jwtEncoder,
-                      @Value("${spring.security.jwt.expiration-seconds}") long expirationSeconds) {
+                      @Value("${spring.security.jwt.expiration-seconds:900}") long expirationSeconds) {
         this.jwtEncoder = jwtEncoder;
         this.expirationSeconds = expirationSeconds;
     }
